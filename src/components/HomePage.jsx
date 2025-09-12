@@ -1,4 +1,4 @@
-export default function HomePage() {
+export default function HomePage({ setFile, setAudioStream }) {
     return (
         <main className="flex-1 p-4 flex flex-col gap-3 text-center sm:gap-4 md:gap-5 justify-center pb-20">
             <h1 className="font-semibold text-5xl sm:text-6xl md:text-7xl">
@@ -16,7 +16,12 @@ export default function HomePage() {
                 Or{' '}
                 <label className="cursor-pointer text-blue-400 hover:text-blue-600 duration-200">
                     upload{' '}
-                    <input className="hidden" type="file" accept=".mp3,.wave" />{' '}
+                    <input
+                        onChange={(e) => setFile(e.target.files[0])}
+                        className="hidden"
+                        type="file"
+                        accept=".mp3,.wave"
+                    />{' '}
                 </label>
                 a mp3 file
             </p>
