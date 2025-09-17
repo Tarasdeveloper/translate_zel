@@ -6,17 +6,12 @@ export default function HomePage({ setFile, setAudioStream }) {
     const [duration, setDuration] = useState(0);
 
     const mediaRecorder = useRef(null);
-    const mimeType = 'audio/webm';
+    let mimeType = 'audio/webm;codecs=opus';
     // const mimeType = 'audio/ogg';
 
-    // let mimeType = 'audio/webm;codecs=opus';
-
-    // if (!MediaRecorder.isTypeSupported(mimeType)) {
-    //     mimeType = 'audio/webm';
-    // }
-    // if (!MediaRecorder.isTypeSupported(mimeType)) {
-    //     mimeType = 'audio/ogg;codecs=opus';
-    // }
+    if (!MediaRecorder.isTypeSupported(mimeType)) {
+        mimeType = 'audio/ogg;codecs=opus';
+    }
 
     async function startRecording() {
         let tempStream;
