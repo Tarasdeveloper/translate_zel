@@ -33,17 +33,15 @@ export default function HomePage({ setFile, setAudioStream }) {
         mediaRecorder.current = media;
 
         mediaRecorder.current.start();
+        //     if (e.data && e.data.size > 0) {
+        //         setAudioChunks((prev) => [...prev, e.data]);
+        //     }
+        let localAudioChunks = [];
         mediaRecorder.current.ondataavailable = (e) => {
-            if (e.data && e.data.size > 0) {
-                setAudioChunks((prev) => [...prev, e.data]);
-            }
+            if (typeof e.data === 'undefined' || e.data.size === 0) return;
+            localAudioChunks.push(e.data);
         };
-        // let localAudioChunks = [];
-        // mediaRecorder.current.ondataavailable = (e) => {
-        //     if (typeof e.data === 'undefined' || e.data.size === 0) return;
-        //     localAudioChunks.push(e.data);
-        // };
-        // setAudioChunks(localAudioChunks);
+        setAudioChunks(localAudioChunks);
     }
 
     async function stopRecording() {

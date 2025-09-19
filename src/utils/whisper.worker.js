@@ -1,75 +1,99 @@
-import { pipeline } from '@xenova/transformers';
+import { pipeline, env } from '@xenova/transformers';
 import { MessageTypes } from './presets';
+
+env.allowLocalModels = false;
+env.useFS = false;
+env.useBrowserCache = false;
 
 class MyTranscriptionPipeline {
     static task = 'automatic-speech-recognition';
-    static model = 'openai/whisper-tiny.en';
+    static model = 'Xenova/whisper-tiny.en';
     static instance = null;
 
     static async getInstance(progress_callback = null) {
         if (this.instance === null) {
             this.instance = await pipeline(this.task, this.model, {
                 progress_callback,
+                revision: 'main',
+                cache_dir: 'indexeddb://transformers-cache',
             });
         }
+
         return this.instance;
     }
 }
 
-self.addEventListener('message', async (e) => {
-    const { type, audio } = e.data;
+self.addEventListener('message', async (event) => {
+    const { type, audio, model_name } = event.data;
     if (type === MessageTypes.INFERENCE_REQUEST) {
-        await transcribe(audio);
+        await transcribe(audio, model_name);
     }
 });
 
-async function transcribe(audio) {
+async function transcribe(audio, model_name) {
     sendLoadingMessage('loading');
+
     let pipeline;
+
     try {
+        // Update the model name if provided
+        if (model_name) {
+            MyTranscriptionPipeline.model = model_name;
+        }
         pipeline = await MyTranscriptionPipeline.getInstance(
             load_model_callback
         );
     } catch (err) {
-        console.log(err.message);
+        console.log('Pipeline initialization error:', err.message);
+        sendLoadingMessage('error');
+        return;
     }
+
     sendLoadingMessage('success');
 
     const stride_length_s = 5;
-    const generationTracker = new GenerationTracker(pipeline, stride_length_s);
 
-    await pipeline(audio, {
-        top_k: 0,
-        do_sample: false,
-        chunk_length: 30,
-        stride_length_s,
-        return_timestamps: true,
-        callback_function:
-            generationTracker.callbackFunction.bind(generationTracker),
-        chunk_callback: generationTracker.chunkCallback.bind(generationTracker),
-    });
-    generationTracker.sendFinalResult();
+    const generationTracker = new GenerationTracker(pipeline, stride_length_s);
+    try {
+        await pipeline(audio, {
+            top_k: 0,
+            do_sample: false,
+            chunk_length: 30,
+            stride_length_s,
+            return_timestamps: true,
+            callback_function:
+                generationTracker.callbackFunction.bind(generationTracker),
+            chunk_callback:
+                generationTracker.chunkCallback.bind(generationTracker),
+        });
+        generationTracker.sendFinalResult();
+    } catch (err) {
+        console.log('Transcription error:', err.message);
+    }
 }
 
 async function load_model_callback(data) {
     const { status } = data;
     if (status === 'progress') {
-        const { progress, file, total, loaded } = data;
-        sendDownloadingMessage(progress, file, total, loaded);
+        const { file, progress, loaded, total } = data;
+        sendDownloadingMessage(file, progress, loaded, total);
     }
 }
 
 function sendLoadingMessage(status) {
-    self.postMessage({ type: MessageTypes.LOADING, status });
+    self.postMessage({
+        type: MessageTypes.LOADING,
+        status,
+    });
 }
 
-async function sendDownloadingMessage(progress, file, total, loaded) {
+async function sendDownloadingMessage(file, progress, loaded, total) {
     self.postMessage({
         type: MessageTypes.DOWNLOADING,
-        progress,
         file,
-        total,
+        progress,
         loaded,
+        total,
     });
 }
 
@@ -79,11 +103,12 @@ class GenerationTracker {
         this.stride_length_s = stride_length_s;
         this.chunks = [];
         this.time_precision =
-            pipeline?.processor.feature_extractor.config.chunk_length /
+            pipeline?.processor?.feature_extractor?.config?.chunk_length /
             pipeline.model.config.max_source_positions;
         this.processed_chunks = [];
         this.callbackFunctionCounter = 0;
     }
+
     sendFinalResult() {
         self.postMessage({ type: MessageTypes.INFERENCE_DONE });
     }
@@ -129,8 +154,12 @@ class GenerationTracker {
             this.getLastChunkTimestamp()
         );
     }
+
     getLastChunkTimestamp() {
-        if (this.processed_chunks.length === 0) return 0;
+        if (this.processed_chunks.length === 0) {
+            return 0;
+        }
+        return this.processed_chunks[this.processed_chunks.length - 1].end;
     }
 
     processChunk(chunk, index) {

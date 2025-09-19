@@ -44,6 +44,7 @@ export default function App() {
                 }
                 case 'RESULT': {
                     setOutput(e.data.results);
+                    console.log(e.data.results);
                     break;
                 }
                 case 'INFERENCE_DONE': {
@@ -59,24 +60,18 @@ export default function App() {
     });
 
     async function readAudioFrom(file) {
-        if (file.type.includes('webm') || file.type.includes('ogg')) {
-            // отдать прямо blob, пусть воркер сам декодирует
-            return await file.arrayBuffer();
-        }
-
-        const samplingRate = 16000;
-        const audioCtx = new AudioContext({ sampleRate: samplingRate });
+        const sampling_rate = 16000;
+        const audioCtx = new AudioContext({ sampleRate: sampling_rate });
         const response = await file.arrayBuffer();
         const decoded = await audioCtx.decodeAudioData(response);
         return decoded.getChannelData(0);
     }
 
-    async function handleFormSubmit(e) {
-        e.preventDefault();
+    async function handleFormSubmit() {
         if (!file && !audioStream) return;
 
         let audio = await readAudioFrom(file ? file : audioStream);
-        const model_name = `openai/whisper-tiny.en`;
+        const model_name = `Xenova/whisper-tiny.en`;
 
         worker.current.postMessage({
             type: MessageTypes.INFERENCE_REQUEST,

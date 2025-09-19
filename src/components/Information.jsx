@@ -14,7 +14,7 @@ export default function Information() {
                 <button
                     onClick={() => setTab('transcription')}
                     className={
-                        'px-4 py-1 font-medium ' +
+                        'px-4 py-1 ' +
                         (tab === 'transcription'
                             ? 'bg-blue-400 text-white'
                             : 'text-blue-400 hover:text-blue-600 duration-200')
@@ -25,7 +25,7 @@ export default function Information() {
                 <button
                     onClick={() => setTab('translation')}
                     className={
-                        'px-4 py-1 font-medium ' +
+                        'px-4 py-1 ' +
                         (tab === 'translation'
                             ? 'bg-blue-400 text-white'
                             : 'text-blue-400 hover:text-blue-600 duration-200')

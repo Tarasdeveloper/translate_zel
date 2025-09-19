@@ -1,7 +1,7 @@
 export default function FileDisplay({
     handleResetAudio,
     file,
-    audioStream,
+    // audioStream,
     handleFormSubmit,
 }) {
     return (
