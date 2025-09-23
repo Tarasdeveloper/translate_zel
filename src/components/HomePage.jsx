@@ -6,12 +6,11 @@ export default function HomePage({ setFile, setAudioStream }) {
     const [duration, setDuration] = useState(0);
 
     const mediaRecorder = useRef(null);
+    // let mimeType = 'audio/wav';
     let mimeType = 'audio/webm;codecs=opus';
-    // const mimeType = 'audio/ogg';
-
-    if (!MediaRecorder.isTypeSupported(mimeType)) {
-        mimeType = 'audio/ogg;codecs=opus';
-    }
+    // if (!MediaRecorder.isTypeSupported(mimeType)) {
+    //     mimeType = 'audio/ogg;codecs=opus';
+    // }
 
     async function startRecording() {
         let tempStream;
@@ -27,18 +26,14 @@ export default function HomePage({ setFile, setAudioStream }) {
             return;
         }
         setRecordingStatus('recording');
-
         // create media recorder instance using the stream
-        const media = new MediaRecorder(tempStream, { mimeType });
+        const media = new MediaRecorder(tempStream, { type: mimeType });
         mediaRecorder.current = media;
-
         mediaRecorder.current.start();
-        //     if (e.data && e.data.size > 0) {
-        //         setAudioChunks((prev) => [...prev, e.data]);
-        //     }
         let localAudioChunks = [];
         mediaRecorder.current.ondataavailable = (e) => {
-            if (typeof e.data === 'undefined' || e.data.size === 0) return;
+            if (typeof e.data === 'undefined') return;
+            if (e.data.size === 0) return;
             localAudioChunks.push(e.data);
         };
         setAudioChunks(localAudioChunks);
