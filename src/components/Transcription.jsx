@@ -1,3 +1,3 @@
-export default function Transcription() {
-    return <div>Transcription</div>;
+export default function Transcription({ textElement }) {
+    return <div>{textElement}</div>;
 }
